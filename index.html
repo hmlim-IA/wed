@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수요일 보고 생성기</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      background: white;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .generate-btn {
+      background: #111;
+      color: white;
+    }
+
+    .copy-btn {
+      background: #2d7ef7;
+      color: white;
+    }
+
+    .output {
+      white-space: pre-wrap;
+      background: white;
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      min-height: 120px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>수요일 보고 생성기</h1>
+
+  <label>보고일</label>
+  <input type="date" id="reportDate">
+
+  <label>금주 경매결과</label>
+  <textarea id="auctionResult"
+placeholder="예시&#10;5월 3주 경매결과&#10;A물건 낙찰&#10;(상세) 금리 2bp 축소&#10;누적수익 12.4억원"></textarea>
+
+  <label>타사 입찰동향</label>
+  <textarea id="bidTrend"
+placeholder="예시&#10;A사 공격적 입찰&#10;B사 관망세"></textarea>
+
+  <label>금주 경매일정</label>
+  <textarea id="thisWeekAuction"
+placeholder="예시&#10;5월 3주 경매일정&#10;5/13 입찰&#10;5/15 낙찰"></textarea>
+
+  <label>차주 경매일정</label>
+  <textarea id="nextWeekAuction"
+placeholder="예시&#10;5월 4주 경매일정&#10;5/20 입찰&#10;5/22 낙찰"></textarea>
+
+  <button class="generate-btn" onclick="generateText()">
+    보고 생성하기
+  </button>
+
+  <button class="copy-btn" onclick="copyText()">
+    복사하기
+  </button>
+
+  <div class="output" id="output"></div>
+
+  <script>
+
+    function formatDate(dateString) {
+
+      var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+      var date = new Date(dateString);
+
+      var year = date.getFullYear();
+      var month = String(date.getMonth() + 1).padStart(2, '0');
+      var day = String(date.getDate()).padStart(2, '0');
+
+      var weekday = weekdays[date.getDay()];
+
+      return year + '.' + month + '.' + day + ' (' + weekday + ')';
+    }
+
+    function formatSection(text) {
+
+      if (!text || text.trim() === '') {
+        return '';
+      }
+
+      var lines = text.split('\n');
+
+      var title = lines[0].trim();
+
+      var result = '[' + title + ']';
+
+      var number = 1;
+
+      for (var i = 1; i < lines.length; i++) {
+
+        var line = lines[i].trim();
+
+        if (line !== '') {
+
+          result += '\n';
+
+          if (
+            line.indexOf('(상세)') === 0 ||
+            line.indexOf('누적수익') !== -1
+          ) {
+
+            result += line;
+
+          } else {
+
+            result += number + ') ' + line;
+
+            number++;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    function generateText() {
+
+      var reportDate =
+        document.getElementById('reportDate').value;
+
+      var auctionResult =
+        document.getElementById('auctionResult').value;
+
+      var bidTrend =
+        document.getElementById('bidTrend').value;
+
+      var thisWeekAuction =
+        document.getElementById('thisWeekAuction').value;
+
+      var nextWeekAuction =
+        document.getElementById('nextWeekAuction').value;
+
+      var result = '';
+
+      result += formatDate(reportDate);
+
+      result += '\n\n';
+
+      var resultSection =
+        formatSection(auctionResult);
+
+      if (resultSection !== '') {
+
+        result += resultSection;
+
+        result += '\n\n';
+      }
+
+      result += '[타사 입찰동향]';
+
+      if (bidTrend.trim() !== '') {
+
+        result += '\n';
+
+        result += bidTrend.trim();
+      }
+
+      result += '\n\n';
+
+      var thisWeekText =
+        formatSection(thisWeekAuction);
+
+      if (thisWeekText !== '') {
+
+        result += thisWeekText;
+
+        result += '\n\n';
+      }
+
+      var nextWeekText =
+        formatSection(nextWeekAuction);
+
+      if (nextWeekText !== '') {
+
+        result += nextWeekText;
+      }
+
+      document.getElementById('output').innerText =
+        result.trim();
+    }
+
+    function copyText() {
+
+      var text =
+        document.getElementById('output').innerText;
+
+      navigator.clipboard.writeText(text)
+        .then(function () {
+
+          alert('복사 완료');
+
+        })
+        .catch(function () {
+
+          alert('복사 실패');
+
+        });
+    }
+
+    window.onload = function () {
+
+      var today =
+        new Date().toISOString().split('T')[0];
+
+      document.getElementById('reportDate').value =
+        today;
+    };
+
+  </script>
+
+</body>
+</html>
